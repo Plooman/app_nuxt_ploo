@@ -1,23 +1,35 @@
 import type { H3Event } from 'h3'
+import { getHeader } from 'h3'
 import { serverSupabaseUser } from '#supabase/server'
 import { serverSupabase } from './supabase'
 import type { Profile, UserRole } from '~~/shared/types'
 
-/**
- * Pastikan ada user yang login. Mengembalikan profile lengkap (termasuk role).
- * Throw 401 kalau belum auth.
- */
 export async function requireUser(event: H3Event): Promise<Profile> {
-  const user = await serverSupabaseUser(event)
-  if (!user) {
+  const supabase = serverSupabase()
+  let userId: string | null = null
+
+  // Cek Authorization header terlebih dahulu (untuk mobile/Capacitor)
+  const authHeader = getHeader(event, 'authorization')
+  if (authHeader?.startsWith('Bearer ')) {
+    const token = authHeader.slice(7)
+    const { data: { user }, error } = await supabase.auth.getUser(token)
+    if (!error && user) userId = user.id
+  }
+
+  // Fallback ke cookie session (untuk web)
+  if (!userId) {
+    const user = await serverSupabaseUser(event)
+    if (user) userId = user.id
+  }
+
+  if (!userId) {
     throw createError({ statusCode: 401, statusMessage: 'Unauthorized' })
   }
 
-  const supabase = serverSupabase()
   const { data, error } = await supabase
     .from('profiles')
     .select('id, email, full_name, role, created_at')
-    .eq('id', user.id)
+    .eq('id', userId)
     .single()
 
   if (error || !data) {

@@ -2,7 +2,10 @@
   <div>
     <h1 class="text-2xl font-semibold mb-6">Katalog</h1>
     <div v-if="pending">Loading...</div>
-    <div v-else-if="fetchError" class="text-red-600">Gagal memuat produk. Coba refresh halaman.</div>
+    <div v-else-if="fetchError" class="text-red-600">
+      <div class="font-medium">Gagal memuat produk.</div>
+      <div class="text-sm mt-1 font-mono bg-red-50 px-2 py-1 rounded">{{ fetchError }}</div>
+    </div>
     <div v-else-if="!items.length" class="text-gray-500">Belum ada produk.</div>
     <div v-else class="grid grid-cols-2 md:grid-cols-4 gap-4">
       <NuxtLink
@@ -27,14 +30,15 @@ import type { Product } from '~~/shared/types'
 const api = useApi()
 const items = ref<Product[]>([])
 const pending = ref(true)
-const fetchError = ref(false)
+const fetchError = ref<string | null>(null)
 
 onMounted(async () => {
   try {
     const res = await api<{ items: Product[] }>('/api/products')
     items.value = res.items
-  } catch {
-    fetchError.value = true
+  } catch (e: unknown) {
+    const err = e as { statusMessage?: string; data?: { message?: string }; message?: string }
+    fetchError.value = err.statusMessage ?? err.data?.message ?? err.message ?? 'Unknown error'
   } finally {
     pending.value = false
   }

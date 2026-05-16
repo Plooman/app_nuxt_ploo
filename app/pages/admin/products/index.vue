@@ -5,7 +5,10 @@
       <NuxtLink to="/admin/products/new" class="bg-black text-white px-3 py-1.5 rounded text-sm">+ Tambah</NuxtLink>
     </div>
     <input v-model="q" placeholder="Cari nama..." class="border rounded px-3 py-2 mb-3 w-full max-w-xs" />
-    <table class="w-full text-sm border">
+    <div v-if="loading" class="text-gray-500">Memuat...</div>
+    <p v-else-if="loadError" class="text-red-600">Gagal memuat produk.</p>
+    <p v-if="actionError" class="text-red-600 text-sm mb-2">{{ actionError }}</p>
+    <table v-if="!loading && !loadError" class="w-full text-sm border">
       <thead class="bg-gray-100">
         <tr>
           <th class="text-left p-2">Nama</th>
@@ -39,17 +42,35 @@ definePageMeta({ layout: 'admin', middleware: 'admin' })
 const api = useApi()
 const items = ref<Product[]>([])
 const q = ref('')
+const loading = ref(true)
+const loadError = ref(false)
+const actionError = ref<string | null>(null)
 
 async function load() {
-  const res = await api<{ items: Product[] }>(`/api/products?q=${encodeURIComponent(q.value)}`)
-  items.value = res.items
+  loading.value = true
+  loadError.value = false
+  try {
+    const res = await api<{ items: Product[] }>(`/api/products?q=${encodeURIComponent(q.value)}`)
+    items.value = res.items
+  } catch {
+    loadError.value = true
+  } finally {
+    loading.value = false
+  }
 }
 watch(q, load)
 onMounted(load)
 
 async function remove(id: string) {
   if (!confirm('Hapus produk ini?')) return
-  await api(`/api/products/${id}`, { method: 'DELETE' })
-  await load()
+  actionError.value = null
+  try {
+    await api(`/api/products/${id}`, { method: 'DELETE' })
+    await load()
+  } catch (e: unknown) {
+    actionError.value = (e as { statusMessage?: string; message?: string }).statusMessage
+      ?? (e as { message?: string }).message
+      ?? 'Gagal menghapus produk'
+  }
 }
 </script>

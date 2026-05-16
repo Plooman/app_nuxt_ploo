@@ -51,14 +51,18 @@ const error = ref<string | null>(null)
 const saving = ref(false)
 
 if (!isNew) {
-  const data = await api<Product>(`/api/products/${id}`)
-  form.value = {
-    name: data.name,
-    slug: data.slug,
-    description: data.description ?? '',
-    price: Number(data.price),
-    stock: data.stock,
-    image_url: data.image_url ?? '',
+  try {
+    const data = await api<Product>(`/api/products/${id}`)
+    form.value = {
+      name: data.name,
+      slug: data.slug,
+      description: data.description ?? '',
+      price: Number(data.price),
+      stock: data.stock,
+      image_url: data.image_url ?? '',
+    }
+  } catch {
+    await navigateTo('/admin/products')
   }
 }
 

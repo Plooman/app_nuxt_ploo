@@ -1,7 +1,10 @@
 <template>
   <div>
     <h1 class="text-2xl font-semibold mb-4">Users</h1>
-    <table class="w-full text-sm border">
+    <div v-if="loading" class="text-gray-500">Memuat...</div>
+    <p v-else-if="loadError" class="text-red-600">Gagal memuat users.</p>
+    <p v-if="actionError" class="text-red-600 text-sm mb-2">{{ actionError }}</p>
+    <table v-if="!loading && !loadError" class="w-full text-sm border">
       <thead class="bg-gray-100">
         <tr>
           <th class="text-left p-2">Email</th>
@@ -36,20 +39,45 @@ definePageMeta({ layout: 'admin', middleware: 'admin', allowedRoles: ['admin'] }
 
 const api = useApi()
 const items = ref<Profile[]>([])
+const loading = ref(true)
+const loadError = ref(false)
+const actionError = ref<string | null>(null)
 
 async function load() {
-  const res = await api<{ items: Profile[] }>('/api/users')
-  items.value = res.items
+  loading.value = true
+  loadError.value = false
+  try {
+    const res = await api<{ items: Profile[] }>('/api/users')
+    items.value = res.items
+  } catch {
+    loadError.value = true
+  } finally {
+    loading.value = false
+  }
 }
 onMounted(load)
 
 async function changeRole(id: string, role: UserRole) {
-  await api(`/api/users/${id}`, { method: 'PATCH', body: { role } })
-  await load()
+  actionError.value = null
+  try {
+    await api(`/api/users/${id}`, { method: 'PATCH', body: { role } })
+    await load()
+  } catch (e: unknown) {
+    actionError.value = (e as { statusMessage?: string; message?: string }).statusMessage
+      ?? (e as { message?: string }).message
+      ?? 'Gagal mengubah role'
+  }
 }
 async function remove(id: string) {
   if (!confirm('Hapus user ini permanen?')) return
-  await api(`/api/users/${id}`, { method: 'DELETE' })
-  await load()
+  actionError.value = null
+  try {
+    await api(`/api/users/${id}`, { method: 'DELETE' })
+    await load()
+  } catch (e: unknown) {
+    actionError.value = (e as { statusMessage?: string; message?: string }).statusMessage
+      ?? (e as { message?: string }).message
+      ?? 'Gagal menghapus user'
+  }
 }
 </script>

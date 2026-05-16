@@ -45,13 +45,17 @@ const error = ref<string | null>(null)
 const saving = ref(false)
 
 if (!isNew) {
-  const data = await api<News>(`/api/news/${id}`)
-  form.value = {
-    title: data.title,
-    slug: data.slug,
-    content: data.content ?? '',
-    cover_url: data.cover_url ?? '',
-    published: data.published,
+  try {
+    const data = await api<News>(`/api/news/${id}`)
+    form.value = {
+      title: data.title,
+      slug: data.slug,
+      content: data.content ?? '',
+      cover_url: data.cover_url ?? '',
+      published: data.published,
+    }
+  } catch {
+    await navigateTo('/admin/news')
   }
 }
 

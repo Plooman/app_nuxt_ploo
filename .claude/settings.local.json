@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run *)",
+      "Bash(npx nuxt *)",
+      "Bash(curl -s http://localhost:3001)",
+      "Bash(node -e \"const p = require\\('./node_modules/@pinia/nuxt/package.json'\\); console.log\\(JSON.stringify\\(p.peerDependencies, null, 2\\)\\)\")",
+      "Bash(npm show *)",
+      "Bash(node -e \"const {createPinia} = require\\('./node_modules/pinia/pinia.cjs'\\); const p = createPinia\\(\\); console.log\\('state exists:', 'state' in p\\); console.log\\('state type:', typeof p.state\\); console.log\\('pinia keys:', Object.keys\\(p\\)\\)\")",
+      "Bash(node -e \"const {createPinia} = require\\('pinia'\\); const p = createPinia\\(\\); console.log\\('state exists:', 'state' in p\\); console.log\\('state type:', typeof p.state\\); console.log\\('pinia keys:', Object.keys\\(p\\)\\)\")",
+      "Bash(node -e \"const fs=require\\('fs'\\); const lines=fs.readFileSync\\('./node_modules/nuxt/dist/app/nuxt.js','utf8'\\).split\\('\\\\n'\\); lines.slice\\(110,130\\).forEach\\(\\(l,i\\)=>console.log\\(i+111,l\\)\\)\")",
+      "Bash(node -e \"const fs=require\\('fs'\\); const content=fs.readFileSync\\('./node_modules/nuxt/dist/app/nuxt.js','utf8'\\); const idx=content.indexOf\\('app:rendered'\\); const lines=content.split\\('\\\\n'\\); const lineNum=content.substring\\(0,idx\\).split\\('\\\\n'\\).length; lines.slice\\(lineNum-5,lineNum+10\\).forEach\\(\\(l,i\\)=>console.log\\(i+lineNum-4,l\\)\\)\")",
+      "Bash(Select-String -NotMatch \"node_modules\")"
+    ]
+  }
+}

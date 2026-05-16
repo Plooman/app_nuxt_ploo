@@ -1,85 +1,92 @@
-# Nuxt Minimal Starter
+# Ploo — Admin Panel + Mobile (Nuxt + Supabase + Capacitor)
 
-Look at the [Nuxt documentation](https://nuxt.com/docs/getting-started/introduction) to learn more.
+Admin panel untuk mengelola **users**, **produk**, dan **berita**. Siap di-build untuk web (SSR) dan mobile (Capacitor).
+
+## Stack
+
+- **Nuxt 4** (SSR untuk web, static SPA untuk mobile)
+- **Supabase** — Auth + Postgres + Storage
+- **Nitro `server/api`** — BFF layer. Semua write business logic lewat sini, BUKAN langsung dari client ke Supabase. Saat skala besar nanti, isi `server/api/**` bisa dipindah ke service custom tanpa mengubah client.
+- **@nuxt/ui + Tailwind** untuk UI admin
+- **Pinia** untuk state
+- **Capacitor** untuk build Android (web → static → APK)
 
 ## Setup
 
-Make sure to install dependencies:
+1. Copy env: `cp .env.example .env`, isi:
+   - `SUPABASE_URL`, `SUPABASE_KEY` (anon) — dari Supabase project settings
+   - `SUPABASE_SERVICE_KEY` (service_role) — **server-only**, jangan expose ke client
+   - `NUXT_PUBLIC_API_BASE` — kosong untuk dev (default same-origin), set ke URL deployed untuk build mobile
+
+2. Jalankan SQL schema: buka Supabase dashboard → SQL Editor → tempel isi `supabase/schema.sql` → Run.
+
+3. Install & dev:
+
+   ```bash
+   npm install
+   npm run dev
+   ```
+
+4. Bootstrap admin pertama:
+   - Register lewat `/register`
+   - Buka Supabase → Table editor → `profiles` → ubah `role` user pertama ke `admin`
+
+## Role
+
+| Role     | Akses                                                       |
+|----------|-------------------------------------------------------------|
+| admin    | Semua: users, produk, berita, orders                        |
+| manager  | Produk (CRUD) — stok, harga, deskripsi, dst                  |
+| user     | Beli produk, baca berita                                     |
+
+Enforcement ada di **`server/api`** (cek `requireRole`). UI hanya hide menu.
+
+## Mobile build (Android)
 
 ```bash
-# npm
-npm install
-
-# pnpm
-pnpm install
-
-# yarn
-yarn install
-
-# bun
-bun install
+# Set NUXT_PUBLIC_API_BASE ke URL produksi dulu (mis. https://api.ploo.com)
+npm run mobile:android
 ```
 
-## Development Server
+Flow: `nuxt generate` (build static SPA) → `cap sync` → buka di Android Studio.
 
-Start the development server on `http://localhost:3000`:
+Untuk pertama kali, tambah platform Android dulu:
 
 ```bash
-# npm
-npm run dev
-
-# pnpm
-pnpm dev
-
-# yarn
-yarn dev
-
-# bun
-bun run dev
+npx cap add android
 ```
 
-## Production
+## Arsitektur & roadmap scaling
 
-Build the application for production:
-
-```bash
-# npm
-npm run build
-
-# pnpm
-pnpm build
-
-# yarn
-yarn build
-
-# bun
-bun run build
+```
+Client (web SSR / mobile static)
+        │
+        ▼
+Nitro server/api  ◄── service_role key (server only)
+        │
+        ▼
+Supabase (Auth + DB + Storage)
 ```
 
-Locally preview production build:
+Saat user > 1 juta dan Supabase mulai jadi bottleneck:
+- Pindahkan `server/api/products/**` dan `orders/**` ke microservice custom (Fastify/Hono/Go).
+- Ganti hanya implementasi handler — kontrak ke client tetap sama (`/api/products`, `/api/orders`).
+- Auth tetap di Supabase (verifikasi JWT di service custom).
+- DB bisa tetap Postgres tapi di-host sendiri / dengan connection pooler terpisah.
 
-```bash
-# npm
-npm run preview
+## Struktur penting
 
-# pnpm
-pnpm preview
-
-# yarn
-yarn preview
-
-# bun
-bun run preview
 ```
-
-Check out the [deployment documentation](https://nuxt.com/docs/getting-started/deployment) for more information.
-
-
-# 1. Install the main dependencies in your Nuxt project
-npm install @supabase/supabase-js @nuxtjs/supabase pinia @pinia/nuxt
-
-# 2. For UI components Admin
-npm install @nuxt/ui
-
-# 3.For Mobile App
-npm install @capacitor/core @capacitor/cli @capacitor/android
+app/
+  layouts/{default,admin}.vue
+  pages/                    # public + /admin/**
+  middleware/admin.ts       # guard /admin/**
+  composables/{useAuth,useApi}.ts
+  plugins/auth.client.ts    # hydrate profile saat boot
+server/
+  api/                      # BFF endpoints
+  utils/{supabase,auth}.ts  # service client + requireUser/requireRole
+shared/types/               # tipe dipakai client & server
+supabase/schema.sql         # jalankan di Supabase SQL Editor
+capacitor.config.ts         # config mobile
+```

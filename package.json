@@ -7,7 +7,9 @@
     "dev": "nuxt dev",
     "generate": "nuxt generate",
     "preview": "nuxt preview",
-    "postinstall": "nuxt prepare"
+    "postinstall": "nuxt prepare",
+    "mobile:build": "nuxt generate && cap sync",
+    "mobile:android": "nuxt generate && cap sync android && cap open android"
   },
   "dependencies": {
     "@capacitor/android": "^8.3.4",

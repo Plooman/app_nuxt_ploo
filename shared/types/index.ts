@@ -50,3 +50,11 @@ export interface OrderItem {
   qty: number
   price_snapshot: number
 }
+
+export interface OrderItemWithProduct extends OrderItem {
+  products?: { name: string; image_url: string | null } | null
+}
+
+export interface OrderWithItems extends Order {
+  order_items: OrderItemWithProduct[]
+}

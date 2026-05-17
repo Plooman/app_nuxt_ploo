@@ -14,49 +14,28 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, statusMessage: 'items required' })
   }
 
-  const supabase = serverSupabase()
-  const ids = body.items.map((i) => i.product_id)
-  const { data: products, error: pErr } = await supabase
-    .from('products')
-    .select('id, price, stock')
-    .in('id', ids)
-  if (pErr) throw createError({ statusCode: 500, statusMessage: pErr.message })
-
-  // Validasi stok + hitung total dengan price snapshot dari DB (bukan dari client).
-  let total = 0
-  const lines: { product_id: string; qty: number; price_snapshot: number }[] = []
-  for (const line of body.items) {
-    const prod = products?.find((p) => p.id === line.product_id)
-    if (!prod) throw createError({ statusCode: 400, statusMessage: `Product ${line.product_id} not found` })
-    if (line.qty < 1) throw createError({ statusCode: 400, statusMessage: 'qty must be >= 1' })
-    if (prod.stock < line.qty) {
-      throw createError({ statusCode: 400, statusMessage: `Insufficient stock for ${prod.id}` })
+  for (const item of body.items) {
+    if (!item.product_id || !item.qty || item.qty < 1) {
+      throw createError({ statusCode: 400, statusMessage: 'qty minimal 1' })
     }
-    total += Number(prod.price) * line.qty
-    lines.push({ product_id: prod.id, qty: line.qty, price_snapshot: Number(prod.price) })
   }
 
-  const { data: order, error: oErr } = await supabase
-    .from('orders')
-    .insert({ user_id: me.id, status: 'pending', total })
-    .select()
-    .single()
-  if (oErr) throw createError({ statusCode: 500, statusMessage: oErr.message })
+  const supabase = serverSupabase()
 
-  const { error: iErr } = await supabase
-    .from('order_items')
-    .insert(lines.map((l) => ({ ...l, order_id: order.id })))
-  if (iErr) throw createError({ statusCode: 500, statusMessage: iErr.message })
+  // Gunakan RPC atomic untuk menghindari race condition pada stock.
+  // Pastikan fungsi create_order_atomic sudah dijalankan di Supabase SQL Editor
+  // (lihat supabase/schema.sql bagian "Atomic order creation").
+  const { data: orderId, error } = await supabase.rpc('create_order_atomic', {
+    p_user_id: me.id,
+    p_items: body.items,
+  })
 
-  // Decrement stok. Catatan: bukan transaksi atomik — saat skala besar pindahkan
-  // ke RPC/stored procedure atau service custom yang punya transaksi DB nyata.
-  for (const l of lines) {
-    const prod = products!.find((p) => p.id === l.product_id)!
-    await supabase
-      .from('products')
-      .update({ stock: prod.stock - l.qty })
-      .eq('id', l.product_id)
+  if (error) {
+    if (error.message.includes('Insufficient stock') || error.message.includes('not found')) {
+      throw createError({ statusCode: 400, statusMessage: error.message })
+    }
+    throw createError({ statusCode: 500, statusMessage: error.message })
   }
 
-  return order
+  return { id: orderId as string }
 })

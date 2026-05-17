@@ -1,19 +1,9 @@
 -- =============================================================
--- Ploo: Complete Database Schema (Supabase / PostgreSQL)
--- =============================================================
--- File ini adalah GAMBARAN LENGKAP database saat ini.
--- Gunakan untuk setup database baru (fresh install).
---
--- Untuk perubahan bertahap, lihat folder migrations/:
---   migrations/001_initial_schema.sql              [APPLIED]
---   migrations/002_atomic_order_function.sql        [PENDING]
---
--- Aturan pengelolaan migration → supabase/rules.md
---
--- Cara kerja:
---   - Fresh database  → jalankan file ini saja (schema.sql)
---   - Database lama   → jalankan HANYA file migrations/ yang berstatus PENDING
---   - Setelah apply   → ubah status file migration dari PENDING → APPLIED
+-- Migration: 001_initial_schema.sql
+-- Status: APPLIED
+-- Tanggal apply: 2026-05-17
+-- Deskripsi: Schema awal — enums, semua tabel, trigger new user,
+--            indexes, dan RLS policies.
 -- =============================================================
 
 -- ---------- Enums ----------
@@ -25,7 +15,7 @@ do $$ begin
   create type order_status as enum ('pending', 'paid', 'shipped', 'done', 'cancelled');
 exception when duplicate_object then null; end $$;
 
--- ---------- profiles (1-1 dengan auth.users) ----------
+-- ---------- profiles ----------
 create table if not exists public.profiles (
   id uuid primary key references auth.users(id) on delete cascade,
   email text not null unique,
@@ -126,60 +116,3 @@ create policy "order_items self read" on public.order_items
   for select using (
     exists (select 1 from public.orders o where o.id = order_id and o.user_id = auth.uid())
   );
-
--- ---------- Functions ----------
-create or replace function public.create_order_atomic(
-  p_user_id uuid,
-  p_items jsonb
-) returns uuid
-language plpgsql
-security definer
-as $$
-declare
-  v_order_id uuid;
-  v_total    numeric(12,2) := 0;
-  v_item     jsonb;
-  v_prod     record;
-  v_qty      int;
-  v_pid      uuid;
-begin
-  for v_item in select * from jsonb_array_elements(p_items) loop
-    v_pid := (v_item->>'product_id')::uuid;
-    v_qty := (v_item->>'qty')::int;
-
-    select price, stock into v_prod
-    from public.products
-    where id = v_pid
-    for update;
-
-    if not found then
-      raise exception 'Product % not found', v_pid;
-    end if;
-    if v_prod.stock < v_qty then
-      raise exception 'Insufficient stock for product %', v_pid;
-    end if;
-
-    v_total := v_total + v_prod.price * v_qty;
-  end loop;
-
-  insert into public.orders (user_id, status, total)
-  values (p_user_id, 'pending', v_total)
-  returning id into v_order_id;
-
-  for v_item in select * from jsonb_array_elements(p_items) loop
-    v_pid := (v_item->>'product_id')::uuid;
-    v_qty := (v_item->>'qty')::int;
-
-    insert into public.order_items (order_id, product_id, qty, price_snapshot)
-    select v_order_id, id, v_qty, price
-    from public.products
-    where id = v_pid;
-
-    update public.products
-    set stock = stock - v_qty, updated_at = now()
-    where id = v_pid;
-  end loop;
-
-  return v_order_id;
-end;
-$$;

@@ -10,7 +10,10 @@
       "Bash(node -e \"const {createPinia} = require\\('pinia'\\); const p = createPinia\\(\\); console.log\\('state exists:', 'state' in p\\); console.log\\('state type:', typeof p.state\\); console.log\\('pinia keys:', Object.keys\\(p\\)\\)\")",
       "Bash(node -e \"const fs=require\\('fs'\\); const lines=fs.readFileSync\\('./node_modules/nuxt/dist/app/nuxt.js','utf8'\\).split\\('\\\\n'\\); lines.slice\\(110,130\\).forEach\\(\\(l,i\\)=>console.log\\(i+111,l\\)\\)\")",
       "Bash(node -e \"const fs=require\\('fs'\\); const content=fs.readFileSync\\('./node_modules/nuxt/dist/app/nuxt.js','utf8'\\); const idx=content.indexOf\\('app:rendered'\\); const lines=content.split\\('\\\\n'\\); const lineNum=content.substring\\(0,idx\\).split\\('\\\\n'\\).length; lines.slice\\(lineNum-5,lineNum+10\\).forEach\\(\\(l,i\\)=>console.log\\(i+lineNum-4,l\\)\\)\")",
-      "Bash(Select-String -NotMatch \"node_modules\")"
+      "Bash(Select-String -NotMatch \"node_modules\")",
+      "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\fahma\\\\ploo\\\\React\\\\app-nuxt-ploo\" -Force)",
+      "Bash(Select-Object Name, PSIsContainer)",
+      "Bash(Format-Table -AutoSize)"
     ]
   }
 }

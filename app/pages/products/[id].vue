@@ -7,17 +7,51 @@
       </div>
       <div>
         <h1 class="text-2xl font-semibold mb-2">{{ product.name }}</h1>
-        <div class="text-xl mb-4">Rp {{ product.price }}</div>
+        <div class="text-xl mb-4">Rp {{ Number(product.price).toLocaleString('id-ID') }}</div>
         <p class="text-gray-700 mb-6 whitespace-pre-line">{{ product.description }}</p>
         <div class="text-sm text-gray-500 mb-4">Stok: {{ product.stock }}</div>
-        <button
-          :disabled="product.stock < 1 || ordering"
-          class="bg-black text-white px-5 py-2 rounded disabled:opacity-50"
-          @click="buy"
-        >
-          {{ ordering ? '...' : 'Beli sekarang' }}
-        </button>
-        <p v-if="msg" class="mt-3 text-sm" :class="msgError ? 'text-red-600' : 'text-green-700'">{{ msg }}</p>
+
+        <div v-if="product.stock > 0" class="flex items-center gap-3 mb-4">
+          <div class="flex items-center border rounded">
+            <button
+              class="w-8 h-8 flex items-center justify-center hover:bg-gray-100 disabled:opacity-40"
+              :disabled="qty <= 1"
+              @click="qty--"
+            >
+              -
+            </button>
+            <span class="w-8 text-center text-sm">{{ qty }}</span>
+            <button
+              class="w-8 h-8 flex items-center justify-center hover:bg-gray-100 disabled:opacity-40"
+              :disabled="qty >= product.stock"
+              @click="qty++"
+            >
+              +
+            </button>
+          </div>
+          <span class="text-sm text-gray-400">maks. {{ product.stock }}</span>
+        </div>
+
+        <div v-if="product.stock > 0" class="flex gap-3">
+          <button
+            class="flex-1 border border-black text-black px-5 py-2 rounded hover:bg-gray-50"
+            @click="addToCart"
+          >
+            + Keranjang
+          </button>
+          <button
+            class="flex-1 bg-black text-white px-5 py-2 rounded hover:bg-gray-800"
+            @click="buyNow"
+          >
+            Beli Sekarang
+          </button>
+        </div>
+        <div v-else class="text-gray-400 text-sm">Stok habis</div>
+
+        <p v-if="msg" class="mt-3 text-sm" :class="msgError ? 'text-red-600' : 'text-green-700'">
+          {{ msg }}
+          <NuxtLink v-if="!msgError" to="/cart" class="underline ml-1">Lihat keranjang</NuxtLink>
+        </p>
       </div>
     </div>
   </div>
@@ -25,10 +59,12 @@
 
 <script setup lang="ts">
 import type { Product } from '~~/shared/types'
+import { useCartStore } from '~/stores/cart'
 
 const route = useRoute()
 const api = useApi()
-const ordering = ref(false)
+const cart = useCartStore()
+const qty = ref(1)
 const msg = ref<string | null>(null)
 const msgError = ref(false)
 
@@ -37,23 +73,22 @@ const { data: product, error } = await useAsyncData(
   () => api<Product>(`/api/products/${route.params.id}`),
 )
 
-async function buy() {
-  ordering.value = true
-  msg.value = null
+function addToCart() {
+  if (!product.value) return
+  cart.add({
+    product_id: product.value.id,
+    name: product.value.name,
+    price: Number(product.value.price),
+    image_url: product.value.image_url,
+    stock: product.value.stock,
+  }, qty.value)
+  msg.value = `${qty.value} item ditambahkan ke keranjang.`
   msgError.value = false
-  try {
-    await api('/api/orders', { method: 'POST', body: { items: [{ product_id: product.value!.id, qty: 1 }] } })
-    msg.value = 'Order berhasil dibuat.'
-  } catch (e: unknown) {
-    msg.value = (e as { statusMessage?: string; message?: string }).statusMessage
-      ?? (e as { message?: string }).message
-      ?? 'Gagal'
-    msgError.value = true
-    if ((e as { statusCode?: number }).statusCode === 401) {
-      await navigateTo('/login?redirect=' + encodeURIComponent(route.fullPath))
-    }
-  } finally {
-    ordering.value = false
-  }
+}
+
+async function buyNow() {
+  if (!product.value) return
+  addToCart()
+  await navigateTo('/cart')
 }
 </script>

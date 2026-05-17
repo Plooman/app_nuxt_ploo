@@ -8,7 +8,17 @@
           <NuxtLink to="/news">Berita</NuxtLink>
           <NuxtLink v-if="canManageProducts" to="/admin">Admin</NuxtLink>
           <template v-if="isAuthed">
-            <span class="text-gray-500">{{ profile?.email }}</span>
+            <NuxtLink to="/cart" class="relative">
+              Keranjang
+              <span
+                v-if="cartCount > 0"
+                class="absolute -top-2 -right-3 bg-black text-white text-xs rounded-full w-4 h-4 flex items-center justify-center leading-none"
+              >
+                {{ cartCount > 9 ? '9+' : cartCount }}
+              </span>
+            </NuxtLink>
+            <NuxtLink to="/orders">Pesanan</NuxtLink>
+            <NuxtLink to="/profile" class="text-gray-600">{{ profile?.full_name || profile?.email }}</NuxtLink>
             <button class="text-red-600" @click="logout">Logout</button>
           </template>
           <template v-else>
@@ -25,11 +35,16 @@
 </template>
 
 <script setup lang="ts">
+import { useCartStore } from '~/stores/cart'
+
 const { isAuthed, profile, canManageProducts } = useAuth()
 const supabase = useSupabaseClient()
+const cart = useCartStore()
+const cartCount = computed(() => cart.count)
 
 async function logout() {
   await supabase.auth.signOut()
+  cart.clear()
   await navigateTo('/login')
 }
 </script>

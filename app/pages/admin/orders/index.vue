@@ -1,48 +1,60 @@
 <template>
   <div>
-    <h1 class="text-2xl font-semibold mb-4">Orders</h1>
-    <div v-if="loading" class="text-gray-500">Memuat...</div>
-    <p v-else-if="loadError" class="text-red-600">Gagal memuat orders.</p>
-    <table v-else class="w-full text-sm border">
-      <thead class="bg-gray-100">
-        <tr>
-          <th class="text-left p-2">ID</th>
-          <th class="text-left p-2">User</th>
-          <th class="p-2">Status</th>
-          <th class="text-right p-2">Total</th>
-          <th class="text-left p-2">Dibuat</th>
-          <th class="p-2"></th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr v-for="o in items" :key="o.id" class="border-t">
-          <td class="p-2 font-mono text-xs">{{ o.id.slice(0, 8) }}</td>
-          <td class="p-2 font-mono text-xs">{{ o.user_id.slice(0, 8) }}</td>
-          <td class="p-2 text-center">
-            <select
-              :value="o.status"
-              class="border rounded px-2 py-1"
-              @change="(e: Event) => updateStatus(o.id, (e.target as HTMLSelectElement).value as OrderStatus)"
-            >
-              <option value="pending">pending</option>
-              <option value="paid">paid</option>
-              <option value="shipped">shipped</option>
-              <option value="done">done</option>
-              <option value="cancelled">cancelled</option>
-            </select>
-          </td>
-          <td class="p-2 text-right">Rp {{ Number(o.total).toLocaleString('id-ID') }}</td>
-          <td class="p-2">{{ new Date(o.created_at).toLocaleString('id-ID') }}</td>
-          <td class="p-2 text-xs text-gray-400">
-            <span v-if="updating === o.id">menyimpan...</span>
-          </td>
-        </tr>
-        <tr v-if="!items.length">
-          <td colspan="6" class="p-4 text-center text-gray-500">Belum ada order.</td>
-        </tr>
-      </tbody>
-    </table>
-    <p v-if="updateError" class="text-red-600 text-sm mt-2">{{ updateError }}</p>
+    <div class="mb-6">
+      <h1 class="text-2xl font-bold text-gray-900">Orders</h1>
+      <p class="text-gray-500 text-sm mt-0.5">Kelola semua pesanan</p>
+    </div>
+
+    <div v-if="loading" class="bg-white border border-gray-200 rounded-xl p-8 text-center text-gray-400 animate-pulse">
+      Memuat...
+    </div>
+    <div v-else-if="loadError" class="bg-red-50 border border-red-200 text-red-700 rounded-xl px-5 py-4 text-sm">
+      Gagal memuat orders.
+    </div>
+    <div v-else class="bg-white border border-gray-200 rounded-xl overflow-hidden">
+      <div v-if="updateError" class="bg-red-50 border-b border-red-200 text-red-700 px-5 py-3 text-sm">
+        {{ updateError }}
+      </div>
+      <table class="w-full text-sm">
+        <thead class="bg-gray-50 border-b border-gray-200">
+          <tr>
+            <th class="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">ID</th>
+            <th class="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">User</th>
+            <th class="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide text-center">Status</th>
+            <th class="text-right px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Total</th>
+            <th class="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Dibuat</th>
+            <th class="px-4 py-3" />
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100">
+          <tr v-if="!items.length">
+            <td colspan="6" class="px-4 py-10 text-center text-gray-400">Belum ada order.</td>
+          </tr>
+          <tr v-for="o in items" :key="o.id" class="hover:bg-gray-50 transition-colors">
+            <td class="px-4 py-3 font-mono text-xs text-gray-500">{{ o.id.slice(0, 8) }}…</td>
+            <td class="px-4 py-3 font-mono text-xs text-gray-500">{{ o.user_id.slice(0, 8) }}…</td>
+            <td class="px-4 py-3 text-center">
+              <select
+                :value="o.status"
+                class="border border-gray-300 rounded-lg px-2.5 py-1.5 text-xs text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-slate-900 focus:border-transparent transition-all"
+                @change="(e: Event) => updateStatus(o.id, (e.target as HTMLSelectElement).value as OrderStatus)"
+              >
+                <option value="pending">Menunggu</option>
+                <option value="paid">Dibayar</option>
+                <option value="shipped">Dikirim</option>
+                <option value="done">Selesai</option>
+                <option value="cancelled">Dibatalkan</option>
+              </select>
+            </td>
+            <td class="px-4 py-3 text-right font-medium text-gray-900">Rp {{ Number(o.total).toLocaleString('id-ID') }}</td>
+            <td class="px-4 py-3 text-gray-500 text-xs">{{ new Date(o.created_at).toLocaleString('id-ID') }}</td>
+            <td class="px-4 py-3 text-xs text-gray-400 text-center">
+              <span v-if="updating === o.id" class="text-slate-500">menyimpan...</span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
   </div>
 </template>
 

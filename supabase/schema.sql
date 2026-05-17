@@ -7,6 +7,7 @@
 -- Untuk perubahan bertahap, lihat folder migrations/:
 --   migrations/001_initial_schema.sql              [APPLIED]
 --   migrations/002_atomic_order_function.sql        [PENDING]
+--   migrations/003_email_blocks.sql                 [PENDING]
 --
 -- Aturan pengelolaan migration → supabase/rules.md
 --
@@ -97,6 +98,14 @@ create table if not exists public.order_items (
   price_snapshot numeric(12,2) not null
 );
 create index if not exists order_items_order_idx on public.order_items(order_id);
+
+-- ---------- email_blocks ----------
+create table if not exists public.email_blocks (
+  email      text        primary key,
+  blocked_at timestamptz not null default now()
+);
+-- RLS aktif tanpa policy = client tidak bisa akses; service_role tetap bypass
+alter table public.email_blocks enable row level security;
 
 -- ---------- RLS ----------
 alter table public.profiles    enable row level security;

@@ -13,7 +13,9 @@
       "Bash(Select-String -NotMatch \"node_modules\")",
       "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\fahma\\\\ploo\\\\React\\\\app-nuxt-ploo\" -Force)",
       "Bash(Select-Object Name, PSIsContainer)",
-      "Bash(Format-Table -AutoSize)"
+      "Bash(Format-Table -AutoSize)",
+      "PowerShell(Get-ChildItem -Path \"C:\\\\Users\\\\fahma\\\\ploo\\\\React\\\\app-nuxt-ploo\\\\app\" -Force | ForEach-Object { $_.FullName })",
+      "PowerShell(Get-ChildItem -Path \"C:\\\\Users\\\\fahma\\\\ploo\\\\React\\\\app-nuxt-ploo\\\\app\" -Recurse -Force | Where-Object { !$_.PSIsContainer } | ForEach-Object { $_.FullName })"
     ]
   }
 }

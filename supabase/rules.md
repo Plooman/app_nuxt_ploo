@@ -66,7 +66,49 @@ Segera perbarui file migration-nya:
 -- Tanggal apply: 2026-05-XX  ← isi tanggal hari ini
 ```
 
-### 5. Setelah membuat migration, update juga `schema.sql`
+### 5. Setiap tabel WAJIB mengaktifkan Row Level Security (RLS)
+
+Supabase menggunakan `anon key` dan `authenticated key` yang bisa diakses dari browser.
+Tanpa RLS, siapa pun bisa membaca atau memodifikasi data tabel tersebut secara langsung.
+
+**Aturan:**
+- Setiap `CREATE TABLE` **harus** diikuti `ALTER TABLE ... ENABLE ROW LEVEL SECURITY`
+- Tambahkan policy sesuai kebutuhan akses:
+
+| Skenario | Yang dilakukan |
+|----------|---------------|
+| Tabel hanya diakses server (service role) | Aktifkan RLS, **tanpa policy** — client tidak bisa akses sama sekali |
+| User hanya bisa baca datanya sendiri | Aktifkan RLS + policy `FOR SELECT USING (auth.uid() = user_id)` |
+| Data publik bisa dibaca siapa saja | Aktifkan RLS + policy `FOR SELECT USING (true)` |
+| User bisa tulis datanya sendiri | Aktifkan RLS + policy `FOR INSERT/UPDATE/DELETE WITH CHECK (auth.uid() = user_id)` |
+
+**Contoh tabel server-only (tanpa client access):**
+```sql
+CREATE TABLE public.email_blocks (
+  email TEXT PRIMARY KEY,
+  blocked_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+-- RLS aktif tanpa policy = client tidak bisa akses; service_role tetap bypass
+ALTER TABLE public.email_blocks ENABLE ROW LEVEL SECURITY;
+```
+
+**Contoh tabel dengan akses user sendiri:**
+```sql
+CREATE TABLE public.user_notes (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id uuid NOT NULL REFERENCES public.profiles(id),
+  content text
+);
+ALTER TABLE public.user_notes ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "notes self read" ON public.user_notes
+  FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "notes self write" ON public.user_notes
+  FOR ALL USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
+```
+
+> **Catatan:** `service_role` key (digunakan di server) selalu bypass RLS — jadi mengaktifkan RLS tidak akan mempengaruhi endpoint server sama sekali.
+
+### 6. Setelah membuat migration, update juga `schema.sql`
 
 `schema.sql` harus selalu mencerminkan state database yang **paling baru**.
 Tambahkan atau modifikasi bagian yang relevan di `schema.sql`.
@@ -124,3 +166,5 @@ Cari file migration dengan status `PENDING`, jalankan satu per satu secara urut:
 - Jangan lupa update `schema.sql` setelah membuat migration baru.
 - Jangan jalankan `schema.sql` pada database yang sudah ada isinya
   (kecuali semua statement sudah aman dengan `IF NOT EXISTS` / `OR REPLACE`).
+- **Jangan buat tabel tanpa `ENABLE ROW LEVEL SECURITY`** — Supabase akan memperingatkan
+  dan client bisa mengakses data secara langsung menggunakan anon/authenticated key.

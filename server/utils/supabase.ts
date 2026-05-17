@@ -11,12 +11,12 @@ export function serverSupabase(): SupabaseClient {
 
   const config = useRuntimeConfig()
   const url = process.env.SUPABASE_URL
-  const serviceKey = config.supabaseServiceKey || process.env.SUPABASE_SERVICE_KEY
+  const serviceKey = config.supabaseSecretKey || process.env.NUXT_SUPABASE_SECRET_KEY
 
   if (!url || !serviceKey) {
     throw createError({
       statusCode: 500,
-      statusMessage: 'Supabase server credentials are not configured (SUPABASE_URL / SUPABASE_SERVICE_KEY).',
+      statusMessage: 'Supabase server credentials are not configured (SUPABASE_URL / NUXT_SUPABASE_SECRET_KEY).',
     })
   }
 

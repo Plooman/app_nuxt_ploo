@@ -1,24 +1,46 @@
 <template>
   <div>
-    <h1 class="text-2xl font-semibold mb-6">Dashboard</h1>
-    <div v-if="loading" class="text-gray-500">Memuat...</div>
-    <p v-else-if="loadError" class="text-red-600">Gagal memuat statistik.</p>
+    <div class="mb-6">
+      <h1 class="text-2xl font-bold text-gray-900">Dashboard</h1>
+      <p class="text-gray-500 text-sm mt-1">Ringkasan statistik aplikasi</p>
+    </div>
+    <div v-if="loading" class="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div v-for="i in 4" :key="i" class="bg-white border border-gray-200 rounded-xl p-5 animate-pulse">
+        <div class="h-3 bg-gray-200 rounded w-1/2 mb-3" />
+        <div class="h-8 bg-gray-200 rounded w-1/3" />
+      </div>
+    </div>
+    <p v-else-if="loadError" class="bg-red-50 border border-red-200 text-red-700 rounded-xl px-5 py-4 text-sm">
+      Gagal memuat statistik.
+    </p>
     <div v-else class="grid grid-cols-2 md:grid-cols-4 gap-4">
-      <div class="border rounded-lg p-4">
-        <div class="text-xs text-gray-500">Produk</div>
-        <div class="text-2xl font-semibold">{{ stats?.products ?? '—' }}</div>
+      <div class="bg-white border border-gray-200 rounded-xl p-5 hover:shadow-md transition-all">
+        <div class="flex items-center gap-2 mb-3">
+          <span class="text-xl">📦</span>
+          <div class="text-xs font-medium text-gray-500 uppercase tracking-wide">Produk</div>
+        </div>
+        <div class="text-3xl font-bold text-gray-900">{{ stats?.products ?? '—' }}</div>
       </div>
-      <div class="border rounded-lg p-4">
-        <div class="text-xs text-gray-500">Berita</div>
-        <div class="text-2xl font-semibold">{{ stats?.news ?? '—' }}</div>
+      <div class="bg-white border border-gray-200 rounded-xl p-5 hover:shadow-md transition-all">
+        <div class="flex items-center gap-2 mb-3">
+          <span class="text-xl">📰</span>
+          <div class="text-xs font-medium text-gray-500 uppercase tracking-wide">Berita</div>
+        </div>
+        <div class="text-3xl font-bold text-gray-900">{{ stats?.news ?? '—' }}</div>
       </div>
-      <div class="border rounded-lg p-4">
-        <div class="text-xs text-gray-500">Users</div>
-        <div class="text-2xl font-semibold">{{ stats?.users ?? '—' }}</div>
+      <div class="bg-white border border-gray-200 rounded-xl p-5 hover:shadow-md transition-all">
+        <div class="flex items-center gap-2 mb-3">
+          <span class="text-xl">👥</span>
+          <div class="text-xs font-medium text-gray-500 uppercase tracking-wide">Users</div>
+        </div>
+        <div class="text-3xl font-bold text-gray-900">{{ stats?.users ?? '—' }}</div>
       </div>
-      <div class="border rounded-lg p-4">
-        <div class="text-xs text-gray-500">Orders</div>
-        <div class="text-2xl font-semibold">{{ stats?.orders ?? '—' }}</div>
+      <div class="bg-white border border-gray-200 rounded-xl p-5 hover:shadow-md transition-all">
+        <div class="flex items-center gap-2 mb-3">
+          <span class="text-xl">🛒</span>
+          <div class="text-xs font-medium text-gray-500 uppercase tracking-wide">Orders</div>
+        </div>
+        <div class="text-3xl font-bold text-gray-900">{{ stats?.orders ?? '—' }}</div>
       </div>
     </div>
   </div>

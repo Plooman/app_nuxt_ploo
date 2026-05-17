@@ -1,2 +1,14 @@
 @import "tailwindcss";
 @import "@nuxt/ui";
+
+/* ─── Design tokens ──────────────────────────────────────────────── */
+/* Input / select / textarea default agar teks selalu terlihat */
+input, select, textarea {
+  color: #111827;       /* gray-900 */
+  background-color: #ffffff;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: #9ca3af;       /* gray-400 */
+}

@@ -1,4 +1,4 @@
-const PUBLIC_ROUTES = ['/login', '/register', '/confirm']
+const PUBLIC_ROUTES = ['/login', '/register', '/confirm', '/reject']
 
 export default defineNuxtRouteMiddleware(async (to) => {
   if (PUBLIC_ROUTES.includes(to.path)) return
